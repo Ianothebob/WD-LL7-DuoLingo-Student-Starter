@@ -27,12 +27,12 @@
    match index.html.
 ---------------------------------------------------------------- */
 const statLabel = document.getElementById("statLabel");
-const statValue = document.getElementById("statValue");
+const lvlValue = document.getElementById("lvlValue");
 const message = document.getElementById("message");
 const answerBtn = document.getElementById("answerBtn");
 const resetBtn = document.getElementById("resetBtn");
 const devLog = document.getElementById("devLog");
-
+const xpBar = document.getElementById("xpBar");
 
 /* ----------------------------------------------------------------
    STEP 2: CREATE YOUR GAME STATE VARIABLE(S)
@@ -52,8 +52,12 @@ const devLog = document.getElementById("devLog");
 
    TODO: Replace the line below with your own state variable.
 ---------------------------------------------------------------- */
-let gameState = 0; // <-- rename this and set a starting value
-
+let gameState = JSON.parse(localStorage.getItem("state")) || {};
+gameState.xp = gameState.xp || 0;
+gameState.lvl = gameState.lvl || 0;
+xpBar.value = gameState.xp;
+lvlValue.textContent = gameState.lvl+1;
+xpBar.max = 50 * 1.25 ** gameState.lvl;
 
 /* ----------------------------------------------------------------
    STEP 3 (OPTIONAL — Random Rewards teams need this):
@@ -134,9 +138,22 @@ function handleAnswer() {
   // --------------------------------------------------------------
 
   if (correct) {
+    message.textContent = "Correct! You gained 10 XP.";
     // TODO: what happens to your game state when the answer is correct?
-    message.textContent = "Correct!";
+    gameState.xp += 10;
+    if (gameState.xp >= 50 * 1.25 ** gameState.lvl) {
+      gameState.xp = 0;
+      xpBar.max = 50 * 1.25 ** gameState.lvl;
+      message.textContent = `Level Up! 🎉 You are now level ${gameState.lvl+1}.`;
+      lvlValue.textContent = ++gameState.lvl+1;
+    }
   } else {
+    if (--gameState.xp < 0) {
+      message.textContent = "You lost A Level! Try again.";
+      gameState.lvl=Math.max(0, --gameState.lvl);
+      xpBar.max = 50 * 1.25 ** gameState.lvl;
+      gameState.xp = 50 * 1.25 ** gameState.lvl - 20;
+    }
     // TODO: what happens to your game state when the answer is incorrect?
     message.textContent = "Try again!";
   }
@@ -173,8 +190,10 @@ function handleAnswer() {
   // Remember: changing a variable does NOT change what the player
   // sees. You have to update the DOM separately.
   // --------------------------------------------------------------
-  statValue.textContent = gameState;
-
+    xpBar.value = gameState.xp;
+    xpBar.max = 50 * 1.25 ** gameState.lvl;
+    lvlValue.textContent = gameState.lvl+1;
+    localStorage.setItem("state", JSON.stringify(gameState));
   // This logs to YOUR dev console (in the browser, press F12 to see
   // the real one too) — it's for your team, not the player.
   console.log("Current state:", gameState, "| Correct?", correct);
@@ -194,9 +213,11 @@ function handleAnswer() {
    TODO: Update the starting value below to match Step 2.
 ---------------------------------------------------------------- */
 function handleReset() {
-  gameState = 0; // <-- match this to your starting value from Step 2
+  gameState = { lvl: 0, xp: 0 }; // <-- match this to your starting value from Step 2
 
-  statValue.textContent = gameState;
+  lvlValue.textContent = gameState.lvl;
+  xpBar.value = gameState.xp;
+  xpBar.max = 50 * 1.25 ** gameState.lvl;
   message.textContent = "Press \"Answer\" to begin!";
   devLog.textContent = "Waiting for input...";
 
